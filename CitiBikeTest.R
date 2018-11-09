@@ -1,0 +1,71 @@
+setwd("/Users/naeemnowrouzi/Desktop")
+citibike.data <- read.csv("~/Desktop/725_CitiBike.csv")
+
+# Remove the unknown genders
+citibike.data <- citibike.data[!(citibike.data$gender == 0),]
+
+# Remove the outliers of tripduration
+citibike.data <- citibike.data[!(citibike.data$tripduration >= 5000),]
+
+# Focus only in certain areas where station id < 1000. 
+#citibike.data <- citibike.data[!(citibike.data$start.station.id >= 1000),]
+
+
+# Remove the unused variables
+citibike.data <- citibike.data[,-c(1,6,7,9,10,11,14)]
+#citibike.data
+
+# Convert the binary response to 0s and 1s.
+citibike.data$gender <- ifelse(citibike.data$gender == 2, 0,1) 
+#citibike.data$birth.year <- as.numeric(as.character(citibike.data$birth.year))
+#citibike.data$age <- (rep(2018, nrow(citibike.data)) - citibike.data$birth.year)
+#citibike.data$tripduration <- citibike.data$tripduration/60
+#citibike.data$tripduration
+citibike.data$age <- as.integer(citibike.data$age)
+citibike.data$start.station.id <- as.factor(citibike.data$start.station.id)
+citibike.data$end.station.id <- as.factor(citibike.data$end.station.id)
+nrow(citibike.data)
+
+
+# Create training and test sets
+set.seed(1)
+train <- sample(1:nrow(citibike.data), 50000, replace = FALSE)
+test <- sample(1:nrow(citibike.data)[-train], 5000, replace = FALSE)
+cb.train <- citibike.data[train,]
+cb.test <- citibike.data[test,]
+names(cb.train)
+class(cb.train$startt)
+str(cb.train)
+dim(cb.train)
+
+
+
+# Decimalize the time. 
+#cb.train$starttime <- as.character(cb.train$starttime)
+#cb.train$starttime <- gsub(":", ".", cb.train$starttime)
+#cb.train$starttime <- as.numeric(cb.train$starttime)
+#cb.train$stoptime <- as.character(cb.train$stoptime)
+#cb.train$stoptime <- gsub(":", ".", cb.train$stoptime)
+#cb.train$stoptime <- as.numeric(cb.train$stoptime)
+
+#Plots
+plot(cb.train$starttime, cb.train$tripduration)  
+plot(cb.train$tripduration, cb.train$gender)
+plot(cb.train$gender, cb.train$starttime)
+
+plot(cb.train$end.station.id, cb.train$start.station.id)
+
+
+# Linear Models
+lm.fit <- lm(cb.train$tripduration.minute ~ cb.train$startday + cb.train$starttime +
+               cb.train$age + cb.train$bikeid,
+             data = cb.train)
+summary(lm.fit)
+reduced.mod <- step(lm.fit)
+
+pairs(cb.train)
+linear.fit <- glm(tripduration.minute ~ age + startday + starttime + start.station.id + end.station.id +
+                    bikeid + gender + age, family="gaussian" ,data = cb.train)
+
+summary(linear.fit)
+names(cb.train)
